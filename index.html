@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<head>
+     <script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" type="text/javascript" ></script> 
+    <script src="//cdn.rawgit.com/mrdoob/three.js/r100/examples/js/controls/OrbitControls.js" type="text/javascript" ></script>
+ 
+     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>360</title>
+</head>
+<body> 
+
+<div id="360Container" style="overflow: hidden; background-color: rgb(41, 34, 145);  position: relative; width: 900px; height: 550px;   ">
+    <!--
+     <div id="hs1Obj" title="hs1Obj" style="z-index: 2000; display: none;  cursor: pointer; opacity: 0.5; border-radius: 50px; width: 40px;   color: aqua; height: 40px; background-color: red;  position: absolute;"> </div> 
+-->
+
+<div id="controlerObj" style=" opacity: .5; background-color: rgb(41, 34, 145);  width: 200px; height: 200px; position: absolute; z-index: 20000000; border-radius: 50px; top: 50%; left:50%; transform: translate(-50%, -50%); "></div>  
+
+
+
+     <div style="opacity: 1;" id="_my360div"></div>    
+ </div> 
+
+ 
+ 
+ <script>
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+var _360img="baleno.jpg";
+var _width = 900; 
+var _height=550;
+// Z-right +left   X: -front +back Y:+up -down
+var hotSpots = [{w:25,h:25,X:-490,Y:0,Z:50,img:"plus-icon.png"},
+                {w:25,h:25,X:-490,Y:-130,Z:4,img:"plus-icon.png"}, 
+                {w:25,h:25,X:-490,Y:10,Z:-60,img:"plus-icon.png"},  
+               ]
+
+var  _scene = new THREE.Scene();
+                                          // fov = field of view, aspect ratio, near plane ,  far plane 
+var _camera = new THREE.PerspectiveCamera(45, _width / _height, .1, 10000)
+
+//var _camera = new THREE.PerspectiveCamera(
+     // 45, // fov = field of view
+     // _width / _height, // aspect ratio
+     // 1, // near plane
+     // 1000 // far plane
+   // );
+
+
+_camera.position.x = 200; // is used here to set some distance from a cube that is located at z = 0
+_camera.rotation.order = 'YXZ';
+//_camera.rotation.set(301, 497, 0);
+
+var dpr = window.devicePixelRatio || window.screen.deviceXDPI / window.screen.logicalXDPI;
+var  renderer = new THREE.WebGLRenderer();
+     renderer.autoClear = false;
+     renderer.setClearColor(0x000000, 1);
+     renderer.setPixelRatio(dpr);
+     renderer.setSize(_width, _height);
+     renderer.domElement.style.position = "absolute";
+	 renderer.domElement.style.top = 0;
+	 renderer.domElement.style.left = 0;
+
+const texture = new THREE.TextureLoader().load(_360img); // image  
+const material = new THREE.MeshBasicMaterial({ map: texture ,  side: THREE.FrontSide  });
+
+//var geometry = new THREE.SphereBufferGeometry(600, 60, 40);
+
+var sphereRadius = 500;
+var hsElements = [];
+var hsElementsMesh = [];
+var geometry = new THREE.SphereBufferGeometry(sphereRadius, 32, 16);
+ // invert the geometry on the x-axis so that all of the faces point inward
+ geometry.scale(-1, 1, 1);
+ 
+
+    var _mash = new THREE.Mesh(geometry, material);
+        _scene.add(_mash);
+
+
+   // Controls 
+ //  var   controls = new THREE.OrbitControls(_camera, renderer.domElement);
+	// controls.enableDamping = true;
+	//controls.dampingFactor = 0.25;
+	///controls.enableZoom = false;
+    ///controls.autoRotate = true;
+	////controls.autoRotateSpeed = 30;
+     //controls.update()
+     //controlerObj
+
+
+
+      let _elContD = document.getElementById('controlerObj');
+      //_elContD.style.left = '50px'//_elContD.width/2+"px"
+
+      var isUserInteracting = true;
+        var tempX = 0;
+        var tempY = 0;
+        var rotY =1.58
+        var rotX =0
+
+      _elContD.addEventListener('touchstart', onDocumentMouseDown,  true );
+      _elContD.addEventListener('mousedown', onDocumentMouseDown, true);
+      _elContD.addEventListener('mouseleave', onDocumentMouseOut);
+      
+     // _elContD.addEventListener('mousemove', onDocumentMouseMove);
+      //_elContD.addEventListener('mouseup', onDocumentMouseUp);
+ 
+      //_elContD.addEventListener('touchmove', onDocumentMouseMove);
+      //_elContD.addEventListener('touchend', onDocumentMouseUp)
+
+
+
+      function onDocumentMouseDown(ev) {
+		if ( ev.touches && (ev.touches.length > 1 || (ev.type == "touchend" && ev.touches.length > 0)) ) return;
+		
+		if (ev.type.indexOf("mouse") == 0) {
+			_elContD.addEventListener('mousemove', onDocumentMouseMove);
+			_elContD.addEventListener('mouseup', onDocumentMouseUp);
+		} else {
+			_elContD.addEventListener('touchmove', onDocumentMouseMove);
+			_elContD.addEventListener('touchend', onDocumentMouseUp);
+		}
+		
+		//_this.isMouseMoved = false;
+		//_this.isCanvasTarget = (ev.target === renderer.domElement);
+		//_this.isCanvasTarget = true;
+		
+		//if (_this.isCanvasTarget) {
+			isUserInteracting = true;
+			ev.preventDefault();
+			ev.stopPropagation();
+			var px = ev.touches ? ev.touches[0].pageX : ev.pageX;
+			var py = ev.touches ? ev.touches[0].pageY : ev.pageY;
+			//ClearAllIntervals();
+			//autoRotate = false;
+			tempX = px; tempY = py;
+			//ActivateMouseOnControls(false);
+			//if (props.hotspotAmount) ActivateMouseOnHotspots(false);
+			//iconEl.style.visibility = "hidden";
+		//}
+
+
+	}
+
+
+    function onDocumentMouseMove(ev) {
+		//_this.isMouseMoved = true;
+		if (isUserInteracting === true) {
+			ev.preventDefault();
+			ev.stopPropagation();
+			var px = ev.touches ? ev.touches[0].pageX : ev.pageX;
+			var py = ev.touches ? ev.touches[0].pageY : ev.pageY;
+			rotY += THREE.Math.degToRad((px - tempX)/4);
+			rotX += THREE.Math.degToRad((py - tempY)/4);
+			tempX = px;
+			tempY = py;
+			  
+			 
+		}
+	}
+
+    function onDocumentMouseUp(ev) {
+        
+        
+
+
+    isUserInteracting=false;
+    }
+    function onDocumentMouseOut(ev) {
+		isUserInteracting = false;
+		 
+	}
+
+
+    function onMouseMove(event) {
+  //_camera.position.setFromSphericalCoords(10, Math.PI * -event.clientY / window.innerHeight, 0);
+  //_camera.lookAt(globe.position);
+}
+       
+
+
+   //  const controlsD = new THREE.DragControls( objects, _camera, _elContD );
+
+// add event listener to highlight dragged objects
+
+//controlsD.addEventListener( 'dragstart', function ( event ) {
+
+	 
+
+//} );
+
+//controlsD.addEventListener( 'dragend', function ( event ) {
+
+	 
+
+//} );
+
+
+
+////
+
+//>
+// Hot Spot Element 
+
+for(let i=0; i<hotSpots.length; i++){ 
+
+var hsGeometry = new THREE.SphereBufferGeometry(1, 1,1 );
+//hsGeometry = new THREE.BoxGeometry( 10, 10, 10 );
+var hsMaterial = new THREE.MeshBasicMaterial( {color:parseInt(0xff00ff), side:THREE.FrontSide} );
+var hsMesh = new THREE.Mesh( hsGeometry, hsMaterial );
+    
+/*
+var alpha = (0) * 2 * Math.PI;
+var beta = (0) * Math.PI;
+
+var xx =  0//sphereRadius * Math.sin(alpha) * Math.sin(beta);
+var yy =  0//sphereRadius * Math.cos(beta);
+var zz =  0//sphereRadius * Math.cos(alpha) * Math.sin(beta);
+*/
+
+    hsMesh.name = "hotspot"+i;
+     
+	hsMesh.position.z=hotSpots[i].Z//340; //-right +left
+    hsMesh.position.x=hotSpots[i].X//Math.random()*-495//= +495//-490;  -front + back 
+    hsMesh.position.y=hotSpots[i].Y//0//+490  // -down , +up
+	hsMesh.rotation.y=1.5
+    hsElementsMesh .push(hsMesh)
+
+
+_scene.add(hsMesh);
+
+let hs = document.createElement("div");
+    hs.style.width=hotSpots[i].w+'px';
+    hs.style.height=hotSpots[i].h+'px';
+    hs.style.backgroundColor="#ff0000";
+    hs.style.position="absolute";
+    hs.style.display= "none";
+    hs.style.borderRadius= '50px';
+    hs.style.backgroundImage="url("+hotSpots[i].img+")" ;
+    hs.style.backgroundSize="contain"
+    hs.setAttribute('title', 'hs'+i);
+
+    hsElements.push(hs);
+
+    /*
+    <!--
+     <div id="hs1Obj" title="hs1Obj" style="z-index: 2000; display: none;  cursor: pointer; opacity: 0.5; border-radius: 50px; width: 40px;   color: aqua; height: 40px; background-color: red;  position: absolute;"> </div> 
+-->
+    */
+
+   let _elCont = document.getElementById('360Container')
+       _elCont.appendChild(hs)
+
+
+}
+
+function updateHSposition(){
+
+
+}
+
+  
+// Adding Three to page
+var _el = document.getElementById('_my360div')
+    _el.appendChild(renderer.domElement); 
+ 
+
+// rendering to stage
+ startAnimationLoop = () => {
+     renderer.render(_scene, _camera);
+
+     _camera.rotation.set(rotX, rotY, 0);
+    // console.log(rotX+300, rotY+500, 0)
+     _camera.updateProjectionMatrix();
+
+
+    // The window.requestAnimationFrame() method tells the browser that you wish to perform
+    // an animation and requests that the browser call a specified function
+    // to update an animation before the next repaint
+     window.requestAnimationFrame(startAnimationLoop);
+
+     
+     // Get XY pos of hot spot
+       
+
+           for(let i=0;i<hsElementsMesh.length;i++ ){
+            let _xy = GetScreenPosition(hsElementsMesh[i],_camera);
+            hsElements[i].style.top= (_xy.y)-(hotSpots[i].w/2) +'px';
+            hsElements[i].style.left= (_xy.x)-(hotSpots[i].h/2)  +'px';
+
+            if(_xy.z<1){
+                hsElements[i].style.display = "block";
+          }else{
+            hsElements[i].style.display = "none";
+          }
+
+           }
+
+          
+           // console.info()
+
+  };
+
+ window.requestAnimationFrame(  startAnimationLoop);
+
+
+// boiler plate
+     function GetScreenPosition(obj, cam) {
+		var vector = new THREE.Vector3();
+		    vector = vector.setFromMatrixPosition(obj.matrixWorld);
+		    vector.project(cam);
+
+		vector.x = (1 + vector.x)  * (_width/2)//450//(450-25);
+		vector.y = (1 - vector.y)  * (_height/2)//props.sizeHalf.height;
+		
+		return { x:vector.x, y:vector.y, z:vector.z };
+	}
+
+
+/////////////////////////////////////////////////////////
+    </script>
+
+
+
+</body>
+</html>
